@@ -66,6 +66,10 @@ class PyrenamerPatternEditor:
             "music_dest": "{1}\n" \
                           "{track} - {artist} ({album}) - {title}\n" \
                           "{track} - {artist}\n",
+            "videos_ori": "{X}\n",
+            "videos_dest": "{1}\n" \
+                           "{videoyear}{videomonth}{videoday}_{videotime}_{1}\n" \
+                           "{videowidth}x{videoheight}_{1}\n",
                             }
 
         config_file = os.path.join(self.config_dir, selector)
@@ -154,6 +158,8 @@ class PyrenamerPatternEditor:
             self.pattern_edit_window.set_title(_('Image patterns editor'))
         elif 'music' in selector:
             self.pattern_edit_window.set_title(_('Music patterns editor'))
+        elif 'videos' in selector:
+            self.pattern_edit_window.set_title(_('Video patterns editor'))
 
         self.populate_treeview(selector)
 
@@ -173,6 +179,10 @@ class PyrenamerPatternEditor:
             data = self.main.patterns["music_ori"]
         elif selector == "music_dest":
             data = self.main.patterns["music_dest"]
+        elif selector == "videos_ori":
+            data = self.main.patterns["videos_ori"]
+        elif selector == "videos_dest":
+            data = self.main.patterns["videos_dest"]
 
         # Create model
         self.model = gtk.ListStore(gobject.TYPE_STRING)

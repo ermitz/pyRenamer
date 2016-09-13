@@ -33,7 +33,7 @@ import pyrenamer_globals
 import EXIF
 
 if pyrenamer_globals.have_hachoir:
-    from pyrenamer_metadata import PyrenamerMetadataMusic
+    from pyrenamer_metadata import PyrenamerMetadataMusic, PyrenamerMetadataVideo, PyrenamerMetadataException
 
 if pyrenamer_globals.have_eyed3:
     import eyeD3
@@ -645,6 +645,71 @@ def replace_music_eyed3(name, path, newname, newpath):
         newname = newname.replace('{tracktotal}', '')
         newname = newname.replace('{genre}', '')
         newname = newname.replace('{myear}', '')
+
+    # Returns new name and path
+    newpath = get_new_path(newname, path)
+    return unicode(newname), unicode(newpath)
+
+
+def replace_video_hachoir(name, path, newname, newpath):
+    """ Pattern replace for video """
+
+    file = get_new_path(name, path)
+
+    try:
+        tags = PyrenamerMetadataVideo(file)
+
+        height  = clean_metadata(tags.get_height())
+        width   = clean_metadata(tags.get_width())
+        year    = clean_metadata(tags.get_year())
+        month   = clean_metadata(tags.get_month())
+        day     = clean_metadata(tags.get_day())
+        hour    = clean_metadata(tags.get_hour())
+        minutes = clean_metadata(tags.get_minutes())
+        seconds = clean_metadata(tags.get_seconds())
+
+        if height != None: newname = newname.replace('{videoheight}', height)
+        else: newname = newname.replace('{videoheight}', '')
+
+        if width != None: newname = newname.replace('{videowidth}', width)
+        else: newname = newname.replace('{videowidth}', '')
+
+        if year != None: newname = newname.replace('{videoyear}', year)
+        else: newname = newname.replace('{videoyear}', '')
+
+        if month != None: newname = newname.replace('{videomonth}', month)
+        else: newname = newname.replace('{videomonth}', '')
+
+        if day != None: newname = newname.replace('{videoday}', day)
+        else: newname = newname.replace('{videoday}', '')
+
+        if hour != None: newname = newname.replace('{videohour}', hour)
+        else: newname = newname.replace('{videohour}', '')
+
+        if minutes != None: newname = newname.replace('{videominute}', minutes)
+        else: newname = newname.replace('{videominute}', '')
+
+        if seconds != None: newname = newname.replace('{videosecond}', year)
+        else: newname = newname.replace('{videosecond}', '')
+
+        if year and month and day: newname = newname.replace('{videodate}', "%s%s%s" % (year,month,day))
+        else: newname = newname.replace('{videodate}', '')
+
+        if hour and minutes and seconds: newname = newname.replace('{videotime}', "%s_%s_%s" % (hour,minutes,seconds))
+        else: newname = newname.replace('{videtime}', '')
+           
+
+    except PyrenamerMetadataException:
+        newname = newname.replace('{videoheight}', '')
+        newname = newname.replace('{videowidth}', '')
+        newname = newname.replace('{videoyear}', '')
+        newname = newname.replace('{videomonth}', '')
+        newname = newname.replace('{videoday}', '')
+        newname = newname.replace('{videohour}', '')
+        newname = newname.replace('{videominute}', '')
+        newname = newname.replace('{videosecond}', '')
+        newname = newname.replace('{videodate}', '')
+        newname = newname.replace('{videotime}', '')
 
     # Returns new name and path
     newpath = get_new_path(newname, path)

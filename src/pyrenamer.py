@@ -84,6 +84,8 @@ class pyRenamer:
             "main_dest": "",
             "images_ori": "",
             "images_dest": "",
+            "videos_ori": "",
+            "videos_dest": "",
             "music_ori": "",
             "music_dest": "" }
 
@@ -171,6 +173,11 @@ class pyRenamer:
         self.images_original_pattern_combo = self.glade_tree.get_widget("images_original_pattern_combo")
         self.images_renamed_pattern_combo = self.glade_tree.get_widget("images_renamed_pattern_combo")
 
+        self.videos_original_pattern = self.glade_tree.get_widget("videos_original_pattern")
+        self.videos_renamed_pattern = self.glade_tree.get_widget("videos_renamed_pattern")
+        self.videos_original_pattern_combo = self.glade_tree.get_widget("videos_original_pattern_combo")
+        self.videos_renamed_pattern_combo = self.glade_tree.get_widget("videos_renamed_pattern_combo")
+
         self.music_original_pattern = self.glade_tree.get_widget("music_original_pattern")
         self.music_renamed_pattern = self.glade_tree.get_widget("music_renamed_pattern")
         self.music_original_pattern_combo = self.glade_tree.get_widget("music_original_pattern_combo")
@@ -246,6 +253,7 @@ class pyRenamer:
                     "on_menu_insert_activate": self.menu_cb.on_menu_insert_activate,
                     "on_menu_manual_activate": self.menu_cb.on_menu_manual_activate,
                     "on_menu_images_activate": self.menu_cb.on_menu_images_activate,
+                    "on_menu_videos_activate": self.menu_cb.on_menu_videos_activate,
                     "on_menu_music_activate": self.menu_cb.on_menu_music_activate,
                     "on_menu_show_options_activate": self.menu_cb.on_menu_show_options_activate,
 
@@ -276,6 +284,15 @@ class pyRenamer:
                     "on_images_dest_edit_clicked": self.on_images_dest_edit_clicked,
                     "on_images_original_pattern_combo_changed": self.on_images_original_pattern_combo_changed,
                     "on_images_renamed_pattern_combo_changed": self.on_images_renamed_pattern_combo_changed,
+
+                    "on_videos_original_pattern_changed": self.on_videos_original_pattern_changed,
+                    "on_videos_renamed_pattern_changed": self.on_videos_renamed_pattern_changed,
+                    "on_videos_ori_save_clicked": self.on_videos_ori_save_clicked,
+                    "on_videos_ori_edit_clicked": self.on_videos_ori_edit_clicked,
+                    "on_videos_dest_save_clicked": self.on_videos_dest_save_clicked,
+                    "on_videos_dest_edit_clicked": self.on_videos_dest_edit_clicked,
+                    "on_videos_original_pattern_combo_changed": self.on_videos_original_pattern_combo_changed,
+                    "on_videos_renamed_pattern_combo_changed": self.on_videos_renamed_pattern_combo_changed,
 
                     "on_music_original_pattern_changed": self.on_music_original_pattern_changed,
                     "on_music_renamed_pattern_changed": self.on_music_renamed_pattern_changed,
@@ -539,7 +556,7 @@ class pyRenamer:
             newname, newpath = renamerfilefuncs.rename_using_patterns(newname, newpath, pattern_ini, pattern_end, self.count)
             newname, newpath = renamerfilefuncs.replace_images(name, path, newname, newpath)
 
-        elif self.notebook.get_current_page() == 5 and (pyrenamerglob.have_hachoir or pyrenamerglob.have_eyed3):
+        elif self.notebook.get_current_page() == 6 and (pyrenamerglob.have_hachoir or pyrenamerglob.have_eyed3):
             # Replace music using patterns
             pattern_ini = self.music_original_pattern.get_text()
             pattern_end = self.music_renamed_pattern.get_text()
@@ -548,6 +565,12 @@ class pyRenamer:
                 newname, newpath = renamerfilefuncs.replace_music_hachoir(name, path, newname, newpath)
             elif pyrenamerglob.have_eyed3:
                 newname, newpath = renamerfilefuncs.replace_music_eyed3(name, path, newname, newpath)
+
+        elif self.notebook.get_current_page() == 5:
+            pattern_ini = self.videos_original_pattern.get_text()
+            pattern_end = self.videos_renamed_pattern.get_text()
+            newname, newpath = renamerfilefuncs.rename_using_patterns(newname, newpath, pattern_ini, pattern_end, self.count)
+            newname, newpath = renamerfilefuncs.replace_video_hachoir(name, path, newname, newpath)
 
 
         # Add the kept extension
@@ -946,6 +969,20 @@ class pyRenamer:
         if self.autopreview:
             self.on_preview_button_clicked(None)
 
+    def on_videos_original_pattern_changed(self, widget):
+        """ Reload current dir and disable Rename button """
+        self.rename_button.set_sensitive(False)
+        self.menu_rename.set_sensitive(False)
+        if self.autopreview:
+            self.on_preview_button_clicked(None)
+
+
+    def on_videos_renamed_pattern_changed(self, widget):
+        """ Disable Rename button (user has to click on Preview again) """
+        self.rename_button.set_sensitive(False)
+        self.menu_rename.set_sensitive(False)
+        if self.autopreview:
+            self.on_preview_button_clicked(None)
 
     def populate_pattern_combos(self):
         """ Populate pattern combo boxes """
@@ -958,6 +995,8 @@ class pyRenamer:
         self.images_renamed_pattern_combo.get_model().clear()
         self.music_original_pattern_combo.get_model().clear()
         self.music_renamed_pattern_combo.get_model().clear()
+        self.videos_original_pattern_combo.get_model().clear()
+        self.videos_renamed_pattern_combo.get_model().clear()
 
         pe = pyrenamer_pattern_editor.PyrenamerPatternEditor(self)
         main_ori = pe.get_patterns('main_ori')
@@ -966,6 +1005,8 @@ class pyRenamer:
         images_dest = pe.get_patterns('images_dest')
         music_ori = pe.get_patterns('music_ori')
         music_dest = pe.get_patterns('music_dest')
+        videos_ori = pe.get_patterns('videos_ori')
+        videos_dest = pe.get_patterns('videos_dest')
 
         def set_combo_element(combo, newtext):
             pos = 0
@@ -1025,6 +1066,18 @@ class pyRenamer:
             self.music_renamed_pattern_combo.append_text(p)
         set_combo_element(self.music_renamed_pattern_combo, self.patterns_default["music_dest"])
         self.patterns["music_dest"] = music_dest
+
+        # Videos original
+        for p in videos_ori:
+            self.videos_original_pattern_combo.append_text(p)
+        set_combo_element(self.videos_original_pattern_combo, self.patterns_default["videos_ori"])
+        self.patterns["videos_ori"] = videos_ori
+
+        # Videos renamed
+        for p in videos_dest:
+            self.videos_renamed_pattern_combo.append_text(p)
+        set_combo_element(self.videos_renamed_pattern_combo, self.patterns_default["videos_dest"])
+        self.patterns["videos_dest"] = videos_dest
 
 
     def on_pattern_ori_save_clicked(self, widget):
@@ -1165,6 +1218,54 @@ class pyRenamer:
         pe.create_window('music_dest')
 
 
+    def on_videos_ori_save_clicked(self, widget):
+
+        # Get the pattern value
+        text = self.videos_original_pattern.get_text()
+
+        # Add it to the local file
+        pe = pyrenamer_pattern_editor.PyrenamerPatternEditor(self)
+        pe.add_pattern('videos_ori', text)
+
+        # Add it to the variable
+        patterns = self.patterns["videos_ori"]
+        patterns.append(text)
+        self.patterns["videos_ori"] = patterns
+
+        # And show it on combobox
+        self.videos_original_pattern_combo.append_text(text)
+
+
+    def on_videos_ori_edit_clicked(self, widget):
+        print ("on_videos_ori_edit_clicked")
+        pe = pyrenamer_pattern_editor.PyrenamerPatternEditor(self)
+        pe.create_window('videos_ori')
+
+
+    def on_videos_dest_save_clicked(self, widget):
+
+        # Get the pattern value
+        text = self.videos_renamed_pattern.get_text()
+
+        # Add it to the local file
+        pe = pyrenamer_pattern_editor.PyrenamerPatternEditor(self)
+        pe.add_pattern('videos_dest', text)
+
+        # Add it to the variable
+        patterns = self.patterns["videos_dest"]
+        patterns.append(text)
+        self.patterns["videos_dest"] = patterns
+
+        # And show it on combobox
+        self.videos_renamed_pattern_combo.append_text(text)
+
+
+    def on_videos_dest_edit_clicked(self, widget):
+        pe = pyrenamer_pattern_editor.PyrenamerPatternEditor(self)
+        pe.create_window('videos_dest')
+
+
+
     def on_original_pattern_combo_changed (self, widget):
         text = widget.get_active_text()
         self.patterns_default["main_ori"] = text
@@ -1189,10 +1290,18 @@ class pyRenamer:
         text = widget.get_active_text()
         self.patterns_default["music_ori"] = text
 
-
     def on_music_renamed_pattern_combo_changed (self, widget):
         text = widget.get_active_text()
         self.patterns_default["music_dest"] = text
+
+
+    def on_videos_original_pattern_combo_changed (self, widget):
+        text = widget.get_active_text()
+        self.patterns_default["videos_ori"] = text
+
+    def on_videos_renamed_pattern_combo_changed (self, widget):
+        text = widget.get_active_text()
+        self.patterns_default["videos_dest"] = text
 
 
     def on_notebook_switch_page(self, notebook, page, page_num):

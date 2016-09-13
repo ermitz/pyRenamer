@@ -57,6 +57,9 @@ class PyrenamerMenuCB:
         self.main.notebook.set_current_page(4)
 
     def on_menu_music_activate(self, widget):
+        self.main.notebook.set_current_page(6)
+
+    def on_menu_videos_activate(self, widget):
         self.main.notebook.set_current_page(5)
 
     def on_menu_show_options_activate(self, widget):

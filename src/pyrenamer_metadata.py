@@ -20,6 +20,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 If you find any bugs or have any suggestions email: code@infinicode.org
 """
 
+import re
+
 from hachoir_core.cmd_line import unicodeFilename
 from hachoir_parser import createParser
 from hachoir_metadata import extractMetadata
@@ -69,6 +71,7 @@ class PyrenamerMetadataMusic(PyrenamerMetadata):
             for item in data.values:
                 value += item.text
             self.tags[title] = value
+        print (self.tags)
 
     def get_artist(self):
         try:
@@ -126,3 +129,92 @@ class PyrenamerMetadataMusic(PyrenamerMetadata):
             return self.tags["Bit rate"]
         except:
             return None
+
+
+class PyrenamerMetadataVideo(PyrenamerMetadata):
+
+    def __init__(self, name):
+        super(PyrenamerMetadataVideo, self).__init__(name)
+
+        if not self.parser or not 'video' in self.parser.mime_type:
+            raise PyrenamerMetadataException("File is not video!")
+
+        self.date_re = re.compile(r'(?P<year>[0-9]+)-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})\s+(?P<hour>[0-9]{2}):(?P<minutes>[0-9]{2}):(?P<seconds>[0-9]{2})')
+
+        self.get_metadata()
+        if self.metadata is None:
+            raise PyrenamerMetadataException("No metadata in file!")
+        else:
+            self.parse_metadata()
+
+    def parse_metadata(self):
+        self.tags = {}
+        for data in sorted(self.metadata):
+            if not data.values:
+                continue
+            title = data.description
+            value = ''
+            for item in data.values:
+                value += item.text
+            self.tags[title] = value
+
+    def get_height(self):
+        try:
+            return self.tags["Image height"].split(' ')[0]
+        except:
+            return None
+
+    def get_width(self):
+        try:
+            return self.tags["Image width"].split(' ')[0]
+        except:
+            return None
+
+    def get_year(self):
+        date = self.tags["Creation date"]
+        try:
+            return self.date_re.match(date).group('year')
+        except:
+            return None
+
+    def get_month(self):
+        date = self.tags["Creation date"]
+        try:
+            return self.date_re.match(date).group('month')
+        except:
+            return None
+
+    def get_day(self):
+        date = self.tags["Creation date"]
+        try:
+            return self.date_re.match(date).group('day')
+        except:
+            return None
+
+    def get_hour(self):
+        date = self.tags["Creation date"]
+        try:
+            return self.date_re.match(date).group('hour')
+        except:
+            return None
+
+    def get_minutes(self):
+        date = self.tags["Creation date"]
+        try:
+            return self.date_re.match(date).group('minutes')
+        except:
+            return None
+
+    def get_seconds(self):
+        date = self.tags["Creation date"]
+        try:
+            return self.date_re.match(date).group('seconds')
+        except:
+            return None
+
+    def get_duration(self):
+        try:
+            return self.tags["Duration"]
+        except:
+            return None
+

@@ -30,7 +30,8 @@ except:
 
 try:
     import gtk
-    from pyrenamer import pyrenamer
+    #from pyrenamer import pyrenamer
+    import pyrenamer
 except Exception, e:
 	print "ERROR:", e
 	raise SystemExit
