@@ -1,0 +1,5 @@
+include AUTHORS ChangeLog COPYING NEWS README TODO
+recursive-include data *
+recursive-include doc *
+recursive-include images *
+recursive-include po *
