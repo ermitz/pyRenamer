@@ -58,17 +58,16 @@ if not have_hachoir:
 if not (have_hachoir or have_eyed3):
 	print "WARNING: Music rename disabled!"
 
-root_dir = "/home/eric/DEV/pyrenamer/pyrenamer.git"
-pixmaps_dir = root_dir + "/images"
+pixmaps_dir = build_info.RESOURCE_DIR
 resources_dir = build_info.RESOURCE_DIR
 locale_dir = build_info.LOCALE_DIR
 home_dir = user.home
 config_dir = os.path.join(user.home, '.' + "pyrenamer2")
 
-name = "pyrenamer2"
+name = "pyrenamer"
 name_long = "pyRenamer"
 copyright = 'Copyright © 2006-08 Adolfo González Blázquez'
-authors = ["Adolfo González Blázquez <code@infinicode.org>"]
+authors = ["Adolfo González Blázquez <code@infinicode.org>", "Eric Sagnard"]
 artists = ["Adolfo González Blázquez <code@infinicode.org>"]
 website = "http://www.infinicode.org/code/pyrenamer/"
 version = "0.6.1"

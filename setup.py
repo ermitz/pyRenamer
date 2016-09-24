@@ -4,11 +4,46 @@
 from distutils.core import setup
 from distutils.command.build_py import build_py as _build_py
 from distutils.command.install_data import install_data as _install_data
+from distutils.command.install_lib import install_lib as _install_lib
+from babel.messages import frontend as babel
+
+from babel.messages.frontend import compile_catalog as _compile_catalog
+from babel.messages.frontend import update_catalog as _update_catalog
+from babel.messages.frontend import extract_messages as _extract_messages
+
+from distutils import dir_util
+
 import os 
 
 # Note that we import the package
 # you should ensure that this import has no side effect  
 import pyrenamer
+
+class extract_messages(_extract_messages):
+
+    def initialize_options(self):
+        _extract_messages.initialize_options(self)
+        self.output_file = 'messages.pot'
+        self.input_dirs = 'pyrenamer,data'
+        self.mapping_file = 'extract.cfg'
+
+    # TODO: generate .glade.h file
+
+class update_catalog(_update_catalog):
+
+    def initialize_options(self):
+        _update_catalog.initialize_options(self)
+        self.input_file = 'messages.pot'
+        self.domain = 'pyrenamer'
+        self.locale = 'fr'
+        self.output_file = os.path.join ('po', '%s.po' % self.locale)
+
+    def run(self):
+        for lang in ['en','fr','es','de']:
+           self.locale = lang
+           self.output_file = os.path.join ('po', '%s.po' % self.locale)
+           _update_catalog.run(self)
+
 
 class build_py(_build_py):
     """build_py command
@@ -33,13 +68,33 @@ class build_py(_build_py):
         else:
            return _build_py.copy_file(self,module_file, outfile, preserve_mode=0)
 
+    def run(self):
+        _build_py.run(self)
+
+        cmd_obj = self.distribution.get_command_obj('compile_catalog', 1)
+       
+        for lang in ['en','fr','de','es']:
+            bdir = os.path.join('build','locale', lang)
+            dir_util.mkpath(bdir,dry_run=self.dry_run,verbose=self.verbose)
+            cmd_obj.initialize_options()
+            cmd_obj.locale = lang
+            cmd_obj.use_fuzzy = True
+            cmd_obj.input_file = os.path.join('po', '%s.po' % (lang))
+            cmd_obj.output_file = os.path.join(bdir,'%s.mo' % self.distribution.get_name())
+            cmd_obj.run()
+
+
+
+
 class install_data(_install_data):
     # TODO: use **kwargs, check that outdir is a dir or file
     def copy_file(self, infile, outdir):
         if infile.endswith('.in'):
             iobj = self.distribution.command_obj['install']
+            myname = self.distribution.get_name()
 
-            resource_dir = os.path.join(iobj.install_data, 'usr', 'share', 'pyrenamer')
+            resource_dir = os.path.join(iobj.install_data, 'usr', 'share', myname)
+            image_dir = os.path.join(iobj.install_data, 'usr', 'share', myname)
             locale_dir = os.path.join(iobj.install_data, 'usr', 'share', 'locale')
             bin_dir = iobj.install_scripts
 
@@ -57,11 +112,37 @@ class install_data(_install_data):
         else:
           return _install_data.copy_file(self,infile, outdir)
 
+    def run(self):
+        _install_data.run(self)
+
+
+class install_lib(_install_lib):
+
+    def run(self):
+        _install_lib.run(self)
+
+        iobj = self.distribution.command_obj['install']
+        locale_dir = os.path.join(iobj.install_data, 'usr', 'share', 'locale')
+
+        for lang in ['en','fr','de','es']:
+            bdir = os.path.join('build','locale', lang)
+            infile = os.path.join(bdir, '%s.mo' % self.distribution.get_name())
+            outdir = os.path.join(locale_dir,lang,'LC_MESSAGES')
+            dir_util.mkpath(outdir,dry_run=self.dry_run,verbose=self.verbose)
+            _install_lib.copy_file(self,infile, outdir)
+
+
 
 # This a function call, with many options. 
 setup(
 
-     cmdclass={'build_py': build_py, 'install_data': install_data},
+     cmdclass={ 'build_py': build_py, 
+                'install_data': install_data,
+                'install_lib': install_lib,
+                'compile_catalog': babel.compile_catalog,
+                'extract_messages': extract_messages,
+                'init_catalog': babel.init_catalog,
+                'update_catalog': update_catalog},
  
     # The name of your package, as it will appear on pypi.       
     name='pyrenamer',
@@ -81,8 +162,6 @@ setup(
                    ('usr/share/man/man1', ['doc/pyrenamer.1']),
                    ('usr/share/doc/pyrenamer', ['doc/treefilebrowser_example.py',
                                                'AUTHORS', 'ChangeLog', 'COPYING', 'NEWS', 'README', 'TODO']),
-                   ('usr/share/locale/pyrenamer', ['po/ChangeLog', 'po/de.po', 'po/en.po', 'po/es.po',
-                                         'po/fr.po', 'po/LINGUAS', 'po/POTFILES.in', 'po/POTFILES.skip']),
                  ],
 
     scripts=['pyrenamer/pyrenamer'],
@@ -90,40 +169,33 @@ setup(
     # Name of author
     author="Adolfo González Blázquez ; Eric Sagnard",
  
-    # Votre email, sachant qu'il sera publique visible, avec tous les risques
-    # que ça implique.
-    author_email="lesametlemax@gmail.com",
+    # Email
+    author_email="ermitz888@gmail.com",
  
-    # Une description courte
+    # A short description 
     description="pyRenamer is an application for mass renaming files",
  
-    # Une description longue, sera affichée pour présenter la lib
-    # Généralement on dump le README ici
+    # A long description, will be printed to present the lib  
+    # We usually dump the READ here.    
     long_description=open('README').read(),
  
-    # Vous pouvez rajouter une liste de dépendances pour votre lib
-    # et même préciser une version. A l'installation, Python essayera de
-    # les télécharger et les installer.
+    # You can add a list of dependencies for your lib and even precise
+    # a version. During installation, Python will try to download and   
+    # install them.                       
     #
     # Ex: ["gunicorn", "docutils >= 0.3", "lxml==0.5a7"]
     #
-    # Dans notre cas on en a pas besoin, donc je le commente, mais je le
-    # laisse pour que vous sachiez que ça existe car c'est très utile.
+    # In our case we dont need that, so I let it commented, but I let it
+    # so that you know it exists, as it is very useful. 
     # install_requires= ,
  
-    ## Active la prise en compte du fichier MANIFEST.in
-    #include_package_data=True,
- 
-    # Une url qui pointe vers la page officielle de votre lib
+    # An url which points to official page of your lib.
     #TODO:url='http://github.com/sametmax/sm_lib',
  
-    # Il est d'usage de mettre quelques metadata à propos de sa lib
-    # Pour que les robots puissent facilement la classer.
-    # La liste des marqueurs autorisées est longue:
+    # It is good habits to put some metadata about the lib
+    # So that bots may class it.
+    # The list of possible tags is long:
     # https://pypi.python.org/pypi?%3Aaction=list_classifiers.
-    #
-    # Il n'y a pas vraiment de règle pour le contenu. Chacun fait un peu
-    # comme il le sent. Il y en a qui ne mettent rien.
     classifiers=[
         "Programming Language :: Python",
         "License :: GPLv2",
@@ -132,13 +204,8 @@ setup(
         "Programming Language :: Python :: 2.7",
     ],
  
- 
-    # A fournir uniquement si votre licence n'est pas listée dans "classifiers"
-    # ce qui est notre cas
+    # To be provided only if your license is not listed in "classifiers"
+    # which is not our case.
     #license="WTFPL",
- 
-    # Il y a encore une chiée de paramètres possibles, mais avec ça vous
-    # couvrez 90% des besoins
- 
 )
 
